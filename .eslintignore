@@ -1,0 +1,9 @@
+**/dist/*
+**/node_modules/*
+**/.vscode/*
+**/.idea/*
+**/webpack/*
+setUpJest.js
+
+electron.js
+webpack.*
