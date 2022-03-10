@@ -1,12 +1,14 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import * as path from 'path'
+const remoteMain = require('@electron/remote/main')
+import { spawnSync } from 'child_process'
 
 let mainWindow: Electron.BrowserWindow | null
 
 const isDev = process.env.NODE_ENV === 'development'
 
 function createWindow() {
-  require('@electron/remote/main').initialize()
+  remoteMain.initialize()
   mainWindow = new BrowserWindow({
     title: 'Awesome App',
     width: 800,
@@ -17,7 +19,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js')
     }
   })
-  require('@electron/remote/main').enable(mainWindow.webContents)
+  remoteMain.enable(mainWindow.webContents)
 
   mainWindow.loadURL(
     isDev ? 'http://localhost:4000' : `file://${path.join(__dirname, '../index.html')}`
@@ -46,4 +48,10 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
+})
+
+ipcMain.on('anything-asynchronous', (event, payload) => {
+  // execute tasks on behalf of renderer process
+  event.reply('asynchronous-reply', { message: payload.message })
+  dialog.showMessageBox({ message: 'Message from main process' })
 })
