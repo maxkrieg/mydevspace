@@ -27,6 +27,26 @@ module.exports = {
           loader: 'tsx',
           target: 'es2020',
         }
+      },
+      // {
+      //   test: /\.bin$/,
+      //   loader: "binary-loader",
+      // },
+      {
+        test: /\.bin$/,
+        // exclude: /node_modules/,
+        use: [
+          {
+            loader: 'url-loader',
+            options: {
+              encoding: false,
+              mimetype: false,
+              generator: (content) => {
+                return content;
+              }
+            },
+           },
+         ],
       }
     ],
   },
