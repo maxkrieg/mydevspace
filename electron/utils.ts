@@ -18,5 +18,5 @@ export const validateDockerComposeDir = (dir: string): { success: boolean; messa
     }
   }
 
-  return { success: true }
+  return { success: true, message: dir }
 }

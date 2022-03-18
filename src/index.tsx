@@ -7,8 +7,8 @@ const { ipcRenderer } = electron
 import {
   GET_DOCKER_COMPOSE_DIR,
   GET_DOCKER_COMPOSE_DIR_REPLY,
-  SAVE_DOCKER_COMPOSE_DIR,
-  SAVE_DOCKER_COMPOSE_DIR_REPLY
+  SELECT_DOCKER_COMPOSE_DIR,
+  SELECT_DOCKER_COMPOSE_DIR_REPLY
 } from '../channelConstants'
 
 console.log('electron renderer:', electron)
@@ -16,25 +16,21 @@ console.log('electron main:', electronRemote)
 
 const App = () => {
   const [dockerComposeDir, setDockerComposeDir] = useState('')
-  const [isDockerComposeDirSaved, setIsDockerComposeDirSaved] = useState(false)
   const [composePsResult, setComposePsResult] = useState('')
 
   useEffect(() => {
     ipcRenderer.send(GET_DOCKER_COMPOSE_DIR)
-
     ipcRenderer.on(GET_DOCKER_COMPOSE_DIR_REPLY, (_event, directory) => {
+      console.log('GET_DOCKER_COMPOSE_DIR_REPLY:', directory)
       if (directory) {
         setDockerComposeDir(directory)
-        setIsDockerComposeDirSaved(true)
       }
     })
 
-    ipcRenderer.on(SAVE_DOCKER_COMPOSE_DIR_REPLY, (_event, response) => {
+    ipcRenderer.on(SELECT_DOCKER_COMPOSE_DIR_REPLY, (_event, response) => {
+      console.log('SELECT_DOCKER_COMPOSE_DIR_REPLY:', response)
       if (response.success) {
-        setIsDockerComposeDirSaved(true)
-      } else {
-        setIsDockerComposeDirSaved(false)
-        dialog.showErrorBox('Error', response.message || 'Error saving docker-compose directory')
+        setDockerComposeDir(response.message)
       }
     })
   }, [])
@@ -55,50 +51,27 @@ const App = () => {
     <div>
       <h1>Mydevspace</h1>
       <div>
-        <label>Please provide your docker-compose directory:</label>
-        {!isDockerComposeDirSaved && (
-          <>
-            <input
-              disabled={isDockerComposeDirSaved}
-              style={{ display: 'block', marginBottom: '8px', width: '300px' }}
-              value={dockerComposeDir}
-              placeholder='/path/to/docker-compose'
-              onChange={event => {
-                setDockerComposeDir(event.target.value)
-              }}
-            />
-            <button
-              disabled={!dockerComposeDir}
-              onClick={() => {
-                if (!dockerComposeDir) {
-                  dialog.showErrorBox('Error', 'Please provide a valid path')
-                  return
-                }
-                ipcRenderer.send(SAVE_DOCKER_COMPOSE_DIR, dockerComposeDir)
-              }}
-            >
-              Save
-            </button>
-          </>
-        )}
-        {isDockerComposeDirSaved && (
-          <>
-            <pre style={{ marginBottom: '8px' }}>{dockerComposeDir}</pre>
-            <button
-              onClick={() => {
-                setIsDockerComposeDirSaved(false)
-              }}
-            >
-              Edit
-            </button>
-          </>
-        )}
+        <h3>
+          {dockerComposeDir
+            ? 'Current docker-compose directory:'
+            : 'Please select your docker-compose directory'}
+        </h3>
+        <div>
+          {dockerComposeDir && <pre style={{ marginBottom: '8px' }}>{dockerComposeDir}</pre>}
+          <button
+            onClick={() => {
+              ipcRenderer.send(SELECT_DOCKER_COMPOSE_DIR)
+            }}
+          >
+            {dockerComposeDir ? 'Change directory' : 'Select directory'}
+          </button>
+        </div>
       </div>
       <div>
         <h2>Running Services</h2>
         <div>
           <button
-            disabled={!isDockerComposeDirSaved}
+            disabled={!dockerComposeDir}
             onClick={() => {
               ipcRenderer.send('docker-compose-command', 'ps')
             }}

@@ -3,12 +3,12 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 const remoteMain = require('@electron/remote/main')
 import { spawnSync } from 'child_process'
 import {
-  SAVE_DOCKER_COMPOSE_DIR,
-  SAVE_DOCKER_COMPOSE_DIR_REPLY,
   GET_DOCKER_COMPOSE_DIR,
-  GET_DOCKER_COMPOSE_DIR_REPLY
+  GET_DOCKER_COMPOSE_DIR_REPLY,
+  SELECT_DOCKER_COMPOSE_DIR,
+  SELECT_DOCKER_COMPOSE_DIR_REPLY
 } from '../channelConstants'
-import { saveDockerComposeDir, getDockerComposeDir } from './handlers'
+import { getDockerComposeDir, selectDockerComposeDir } from './handlers'
 
 let mainWindow: Electron.BrowserWindow | null
 
@@ -20,8 +20,8 @@ function createWindow() {
   remoteMain.initialize()
   mainWindow = new BrowserWindow({
     title: 'Awesome App',
-    width: 800,
-    height: 600,
+    width: 1000,
+    height: 800,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -47,6 +47,8 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow()
 
+  registerListeners()
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -56,8 +58,14 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-ipcMain.on(GET_DOCKER_COMPOSE_DIR, getDockerComposeDir(GET_DOCKER_COMPOSE_DIR_REPLY))
-ipcMain.on(SAVE_DOCKER_COMPOSE_DIR, saveDockerComposeDir(SAVE_DOCKER_COMPOSE_DIR_REPLY))
+function registerListeners() {
+  ipcMain.on(
+    SELECT_DOCKER_COMPOSE_DIR,
+    selectDockerComposeDir(SELECT_DOCKER_COMPOSE_DIR_REPLY, mainWindow)
+  )
+
+  ipcMain.on(GET_DOCKER_COMPOSE_DIR, getDockerComposeDir(GET_DOCKER_COMPOSE_DIR_REPLY))
+}
 
 function runDockerComposePs(): { success: boolean; message: string } {
   process.chdir(dockerComposeDirectory)
