@@ -8,7 +8,9 @@ import {
   GET_DOCKER_COMPOSE_DIR,
   GET_DOCKER_COMPOSE_DIR_REPLY,
   SELECT_DOCKER_COMPOSE_DIR,
-  SELECT_DOCKER_COMPOSE_DIR_REPLY
+  SELECT_DOCKER_COMPOSE_DIR_REPLY,
+  DOCKER_COMPOSE_CMD,
+  DOCKER_COMPOSE_CMD_REPLY
 } from '../channelConstants'
 
 console.log('electron renderer:', electron)
@@ -21,7 +23,7 @@ const App = () => {
   useEffect(() => {
     ipcRenderer.send(GET_DOCKER_COMPOSE_DIR)
     ipcRenderer.on(GET_DOCKER_COMPOSE_DIR_REPLY, (_event, directory) => {
-      console.log('GET_DOCKER_COMPOSE_DIR_REPLY:', directory)
+      console.log('GET_DOCKER_COMPOSE_DIR_REPLYY:', directory)
       if (directory) {
         setDockerComposeDir(directory)
       }
@@ -36,7 +38,7 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    ipcRenderer.on('docker-compose-reply', (event, arg) => {
+    ipcRenderer.on(DOCKER_COMPOSE_CMD_REPLY, (event, arg) => {
       console.log('docker-compose-reply', arg)
       const { message, error } = arg
       let result = message
@@ -48,7 +50,7 @@ const App = () => {
   }, [])
 
   return (
-    <div>
+    <div style={{ padding: '20px 40px' }}>
       <h1>Mydevspace</h1>
       <div>
         <h3>
@@ -73,7 +75,7 @@ const App = () => {
           <button
             disabled={!dockerComposeDir}
             onClick={() => {
-              ipcRenderer.send('docker-compose-command', 'ps')
+              ipcRenderer.send(DOCKER_COMPOSE_CMD, 'ps')
             }}
           >
             Run docker-compose ps

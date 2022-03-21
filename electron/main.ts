@@ -6,15 +6,16 @@ import {
   GET_DOCKER_COMPOSE_DIR,
   GET_DOCKER_COMPOSE_DIR_REPLY,
   SELECT_DOCKER_COMPOSE_DIR,
-  SELECT_DOCKER_COMPOSE_DIR_REPLY
+  SELECT_DOCKER_COMPOSE_DIR_REPLY,
+  DOCKER_COMPOSE_CMD,
+  DOCKER_COMPOSE_CMD_REPLY
 } from '../channelConstants'
 import { getDockerComposeDir, selectDockerComposeDir } from './handlers'
+import { getDockerComposeDir as getDockerComposeDirUtil } from './dockerComposeDir'
 
 let mainWindow: Electron.BrowserWindow | null
 
 const isDev = process.env.NODE_ENV === 'development'
-
-let dockerComposeDirectory = ''
 
 function createWindow() {
   remoteMain.initialize()
@@ -68,16 +69,27 @@ function registerListeners() {
 }
 
 function runDockerComposePs(): { success: boolean; message: string } {
-  process.chdir(dockerComposeDirectory)
+  process.chdir(getDockerComposeDirUtil())
   const result = spawnSync('docker-compose', ['ps'])
+  console.log(result)
 
   // Error
-  if (result.status === 1) {
+  if (result.status !== 0) {
     return {
       success: false,
       message: result.stderr.toString()
     }
   }
+
+  console.log(result.stdout.toString())
+  const parts = result.stdout.toString().split('\n')
+  parts.forEach(part => {
+    console.log('PART')
+    console.log(part)
+  })
+  const containers = parts.slice(2, parts.length - 1)
+  console.log('-------containers---------')
+  console.log(containers)
 
   // Success
   return {
@@ -86,11 +98,11 @@ function runDockerComposePs(): { success: boolean; message: string } {
   }
 }
 
-ipcMain.on('docker-compose-command', (event, command: string) => {
+ipcMain.on(DOCKER_COMPOSE_CMD, (event, command: string) => {
   switch (command) {
     case 'ps':
       const response = runDockerComposePs()
-      event.reply('docker-compose-command-reply', response)
+      event.reply(DOCKER_COMPOSE_CMD_REPLY, response)
       break
     default:
       break
